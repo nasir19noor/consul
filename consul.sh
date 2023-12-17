@@ -18,7 +18,7 @@ sudo cat <<EOF > /etc/consul.d/config.json
         "only_passing": true
     },
     "enable_syslog": true,
-    "encrypt": "QrFGmdDhqOX4WkhSUbQpx16f15NgSMfBta++jsH/qTE=",
+    "encrypt": "xxx",
     "leave_on_terminate": true,
     "log_level": "INFO",
     "rejoin_after_leave": true,
