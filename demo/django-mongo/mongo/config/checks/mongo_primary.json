@@ -1,0 +1,17 @@
+{
+    "service": {
+        "name": "mongo-primary",
+        "port": 27017,
+        "tags": [
+            "nosql",
+            "database"
+        ],
+        "check": {
+            "id": "mongo_primary_status",
+            "name": "Mongo Primary Status",
+            "args": ["/etc/consul.d/check_scripts/mongo_primary_check.sh"],
+            "interval": "30s",
+            "timeout": "20s"
+        }
+    }
+}

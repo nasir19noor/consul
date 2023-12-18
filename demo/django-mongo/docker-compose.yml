@@ -1,0 +1,165 @@
+version: "3.6"
+
+services:
+
+  consul_server:
+    build:
+      context: consul_server
+      dockerfile: Dockerfile
+    image: consul_server
+    ports:
+      - 8300:8300
+      - 8301:8301
+      - 8302:8302
+      - 8400:8400
+      - 8500:8500
+    environment:
+      - NODE=consul_server
+      - PRIVATE_IP_ADDRESS=33.10.0.2
+    networks:
+      consul_network:
+        ipv4_address: 33.10.0.2
+
+  load_balancer:
+    image: fabiolb/fabio
+    ports:
+      - 9998:9998
+      - 9999:9999
+    command: -registry.consul.addr="33.10.0.2:8500"
+    networks:
+      consul_network:
+        ipv4_address: 33.10.0.100
+
+  mongo_1:
+    build:
+      context: mongo
+      dockerfile: Dockerfile
+    image: mongo_consul
+    dns:
+      - 127.0.0.1
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      - NODE=mongo_1
+      - MONGO_PORT=27017
+      - PRIMARY_MONGO=33.10.0.3
+      - PRIVATE_IP_ADDRESS=33.10.0.3
+    restart: always
+    ports:
+      - 27017:27017
+      - 28017:28017
+    depends_on:
+      - consul_server
+      - mongo_2
+      - mongo_3
+    networks:
+      consul_network:
+        ipv4_address: 33.10.0.3
+
+  mongo_2:
+    build:
+      context: mongo
+      dockerfile: Dockerfile
+    image: mongo_consul
+    dns:
+      - 127.0.0.1
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      - NODE=mongo_2
+      - MONGO_PORT=27017
+      - PRIMARY_MONGO=33.10.0.3
+      - PRIVATE_IP_ADDRESS=33.10.0.4
+    restart: always
+    ports:
+      - 27018:27017
+      - 28018:28017
+    depends_on:
+      - consul_server
+    networks:
+      consul_network:
+        ipv4_address: 33.10.0.4
+
+  mongo_3:
+    build:
+      context: mongo
+      dockerfile: Dockerfile
+    image: mongo_consul
+    dns:
+      - 127.0.0.1
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      - NODE=mongo_3
+      - MONGO_PORT=27017
+      - PRIMARY_MONGO=33.10.0.3
+      - PRIVATE_IP_ADDRESS=33.10.0.5
+    restart: always
+    ports:
+      - 27019:27017
+      - 28019:28017
+    depends_on:
+      - consul_server
+    networks:
+      consul_network:
+        ipv4_address: 33.10.0.5
+
+  web_1:
+    build:
+      context: django
+      dockerfile: Dockerfile
+    image: web_consul
+    ports:
+      - 8080:8000
+    environment:
+      - NODE=web_1
+      - PRIMARY=1
+      - LOAD_BALANCER=33.10.0.100
+      - PRIVATE_IP_ADDRESS=33.10.0.10
+    dns:
+      - 127.0.0.1
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      - consul_server
+      - mongo_1
+    volumes:
+      - ./django:/web
+    cap_add:
+      - NET_ADMIN
+    networks:
+      consul_network:
+        ipv4_address: 33.10.0.10
+
+  web_2:
+    build:
+      context: django
+      dockerfile: Dockerfile
+    image: web_consul
+    ports:
+      - 8081:8000
+    environment:
+      - NODE=web_2
+      - LOAD_BALANCER=33.10.0.100
+      - PRIVATE_IP_ADDRESS=33.10.0.11
+    dns:
+      - 127.0.0.1
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      - consul_server
+      - mongo_1
+    volumes:
+      - ./django:/web
+    cap_add:
+      - NET_ADMIN
+    networks:
+      consul_network:
+        ipv4_address: 33.10.0.11
+
+networks:
+  consul_network:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 33.10.0.0/16
