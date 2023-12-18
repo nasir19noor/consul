@@ -1,18 +1,29 @@
-FROM ubuntu:22.04
-
-RUN apt-get update && \
-    apt-get install -y \
-    bash curl nano net-tools zip unzip \
-    jq dnsutils iputils-ping
-
-ADD https://releases.hashicorp.com/consul/1.17.1/consul_1.17.1_darwin_amd64.zip /tmp/consul.zip
-RUN cd /bin && unzip /tmp/consul.zip && chmod +x /bin/consul && rm /tmp/consul.zip
-
-# Consul ports
-EXPOSE 8300 8301 8302 8400 8500 8600
-
-ADD consul_server.sh /opt
-RUN mkdir -p /data
-VOLUME /data
-
-CMD ["/opt/consul_server.sh"]
+# docker-compose.yaml
+services:
+  consul_server:
+    image: ubuntu:22.04
+    build: .
+    privileged: true
+    user: root
+    ports:
+      - 8300:8300
+      - 8301:8301
+      - 8302:8302
+      - 8400:8400
+      - 8500:8500
+      - 8600:8600
+    container_name: consul_server
+    volumes:
+      - consul_server:/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+    networks:
+      - nasir
+networks:
+  nasir:
+    external: true
+    name: nasir
+volumes:
+  consul_server:
+    external: true
+    name: consul_server
